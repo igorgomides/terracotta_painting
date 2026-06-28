@@ -1,0 +1,733 @@
+/* ==========================================================================
+   TERRACOTTA PAINTING - STYLESHEET REFINADA (MÉTODO WHEELER & WATKINS)
+   ========================================================================== */
+
+/* 1. Custom Design Tokens & Variables */
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;500;700&family=Montserrat:wght@200;300;400;500;600&display=swap');
+
+:root {
+  --font-display: 'Binary ITC Std', 'Comfortaa', 'Georgia', serif;
+  --font-body: 'Montserrat', sans-serif;
+  
+  /* Cores Institucionais extraídas do logo */
+  --co-terracotta: #C05A3E;
+  --co-slate: #3A3F41;
+  --co-sand: #F4F1EA;
+  --co-white: #FFFFFF;
+  
+  --transition-smooth: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  --header-height: 140px;
+}
+
+/* Reset & Global Canvas */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--co-white);
+  color: var(--co-slate);
+  line-height: 1.6;
+  font-weight: 300;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4 {
+  color: var(--co-slate);
+  font-weight: 400;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: var(--transition-smooth);
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+input, select, textarea, button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  outline: none;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.section-padding {
+  padding: 8rem 0;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* 2. Header & Navigation Refinada */
+header {
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  border-bottom: 1px solid rgba(58, 63, 65, 0.05);
+  transition: var(--transition-smooth);
+}
+
+header.scrolled {
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02);
+  border-bottom-color: rgba(58, 63, 65, 0.1);
+}
+
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: var(--header-height);
+  transition: var(--transition-smooth);
+}
+
+header.scrolled .nav-container {
+  height: 115px;
+}
+
+.logo-link {
+  display: flex;
+  align-items: center;
+}
+
+.nav-logo {
+  height: 110px;
+  width: auto;
+  mix-blend-mode: multiply;
+  transition: var(--transition-smooth);
+}
+
+header.scrolled .nav-logo {
+  height: 88px;
+}
+
+.nav-links {
+  display: flex;
+  list-style: none;
+  gap: 3rem;
+}
+
+.nav-links a {
+  color: var(--co-slate);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  position: relative;
+  padding: 0.5rem 0;
+  transition: var(--transition-smooth);
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background-color: var(--co-terracotta);
+  transition: var(--transition-smooth);
+}
+
+.nav-links a:hover {
+  color: var(--co-terracotta);
+}
+
+.nav-links a:hover::after {
+  width: 100%;
+}
+
+/* Botões com a curvatura assimétrica inspirada nos traços da Binary ITC */
+.header-cta, .hero-cta-btn, .package-cta, .submit-btn {
+  display: inline-block;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 1rem 2.5rem;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  border-radius: 20px 4px 20px 4px; /* Curvas orgânicas assimétricas */
+}
+
+.header-cta {
+  background-color: var(--co-slate);
+  color: var(--co-white);
+  padding: 0.75rem 1.75rem;
+  font-size: 0.75rem;
+}
+
+.header-cta:hover {
+  background-color: var(--co-terracotta);
+  transform: translateY(-2px);
+}
+
+/* Mobile Menu Button */
+.mobile-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  width: 30px;
+}
+
+.mobile-toggle span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background-color: var(--co-slate);
+  transition: var(--transition-smooth);
+}
+
+/* 3. Hero Section (Adoção do Espaço de Luxo) */
+.hero {
+  background: linear-gradient(rgba(244, 241, 234, 0.88), rgba(244, 241, 234, 0.88)), url('assets/images/painted_living_room.png') no-repeat center center/cover;
+  min-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: calc(var(--header-height) + 4rem) 2rem 4rem 2rem;
+}
+
+.hero-logo-container {
+  margin-bottom: 2.5rem;
+  animation: fadeIn 1s ease;
+}
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 5vw, 4rem);
+  color: var(--co-slate);
+  font-weight: bold;
+  max-width: 800px;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+}
+
+.hero-subtitle {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: var(--co-terracotta);
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  margin-bottom: 3rem;
+  font-family: var(--font-body);
+}
+
+.hero-cta-btn {
+  background-color: var(--co-terracotta);
+  color: var(--co-white);
+  box-shadow: 0 10px 30px rgba(192, 90, 62, 0.2);
+}
+
+.hero-cta-btn:hover {
+  background-color: var(--co-slate);
+  box-shadow: 0 10px 30px rgba(58, 63, 65, 0.15);
+  transform: translateY(-3px);
+}
+
+/* 4. Cards de Serviços com a Anatomia Curva da Fonte */
+.packages-section {
+  padding: 8rem 0;
+  background-color: var(--co-white);
+}
+
+.section-tag {
+  display: block;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: var(--co-terracotta);
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3.5vw, 2.5rem);
+  color: var(--co-slate);
+  margin-bottom: 1.5rem;
+}
+
+.section-subtitle {
+  max-width: 700px;
+  margin: 0 auto 5rem auto;
+  color: #707577;
+  font-size: 1rem;
+}
+
+.grid {
+  display: grid;
+  gap: 2.5rem;
+}
+
+.packages-grid {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+/* O Card ganha a assinatura visual da fonte nas bordas externas */
+.package-card {
+  background-color: var(--co-sand);
+  padding: 3.5rem 2.5rem;
+  text-align: left;
+  position: relative;
+  transition: var(--transition-smooth);
+  border-radius: 40px 8px 40px 8px; /* Curvas orgânicas e expressivas */
+  border: 1px solid rgba(58, 63, 65, 0.03);
+  display: flex;
+  flex-direction: column;
+}
+
+.package-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(58, 63, 65, 0.08);
+  background-color: var(--co-white);
+  border-color: rgba(192, 90, 62, 0.15);
+}
+
+.package-tier {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--co-terracotta);
+  font-weight: 700;
+}
+
+.package-name {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: var(--co-slate);
+  margin: 0.5rem 0 1.5rem 0;
+  line-height: 1.2;
+}
+
+.package-subname {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-style: italic;
+  font-weight: 400;
+  color: #707577;
+  margin-top: 0.25rem;
+  text-transform: none;
+  letter-spacing: 0.05em;
+}
+
+.package-desc {
+  font-size: 0.95rem;
+  color: var(--co-slate);
+  margin-bottom: 2rem;
+  font-weight: 500;
+  min-height: 50px;
+}
+
+.package-features {
+  list-style: none;
+  margin-bottom: 3rem;
+  width: 100%;
+}
+
+/* Marcadores customizados simulando cortes geométricos finos */
+.package-features li {
+  font-size: 0.9rem;
+  color: #555c5e;
+  margin-bottom: 1rem;
+  position: relative;
+  padding-left: 1.5rem;
+  border-bottom: none;
+}
+
+.package-features li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.6rem;
+  width: 8px;
+  height: 2px;
+  background-color: var(--co-terracotta);
+}
+
+.package-cta {
+  display: block;
+  text-align: center;
+  background-color: transparent;
+  border: 1px solid var(--co-slate);
+  color: var(--co-slate);
+  width: 100%;
+  margin-top: auto;
+}
+
+.package-card:hover .package-cta {
+  background-color: var(--co-terracotta);
+  border-color: var(--co-terracotta);
+  color: var(--co-white);
+}
+
+/* 5. Visual Work Showcase (Frase de Impacto Emocional) */
+.showcase-banner {
+  background-color: var(--co-slate);
+  padding: 6rem 2rem;
+  text-align: center;
+}
+
+.banner-text {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  color: var(--co-sand);
+  font-style: italic;
+}
+
+/* Gallery Grid */
+.gallery-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  padding-bottom: 8rem;
+  margin-top: 3rem;
+}
+
+.gallery-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px 6px 24px 6px;
+  aspect-ratio: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+}
+
+.gallery-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: var(--transition-smooth);
+}
+
+.gallery-item:hover .gallery-image {
+  transform: scale(1.08);
+}
+
+.gallery-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(58, 63, 65, 0.85), transparent 70%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 2rem;
+  opacity: 0;
+  transition: var(--transition-smooth);
+}
+
+.gallery-item:hover .gallery-overlay {
+  opacity: 1;
+}
+
+.gallery-tag {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--co-terracotta);
+  font-weight: 600;
+}
+
+.gallery-title {
+  color: var(--co-white);
+  font-size: 1.2rem;
+  margin-top: 0.25rem;
+}
+
+/* 6. Form de Orçamento Limpo e Arquitetônico */
+.estimate-section {
+  background-color: var(--co-sand);
+  padding: 8rem 0;
+}
+
+.estimate-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 4rem;
+  background-color: var(--co-white);
+  padding: 4rem;
+  border-radius: 40px 8px 40px 8px;
+  box-shadow: 0 30px 60px rgba(58, 63, 65, 0.04);
+}
+
+.estimate-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.estimate-info h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3.5vw, 2.5rem);
+  margin-bottom: 1.5rem;
+}
+
+.estimate-info p {
+  font-size: 0.95rem;
+  color: var(--co-slate);
+  margin-bottom: 2rem;
+}
+
+.contact-meta {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.contact-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.contact-meta-icon {
+  width: 20px;
+  height: 24px;
+  color: var(--co-terracotta);
+}
+
+.estimate-form-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.estimate-form {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--co-slate);
+}
+
+.form-control {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(58, 63, 65, 0.15);
+  background-color: var(--co-sand);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--co-slate);
+  transition: var(--transition-smooth);
+  border-radius: 12px 4px 12px 4px;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--co-terracotta);
+  background-color: var(--co-white);
+  box-shadow: 0 0 0 4px rgba(192, 90, 62, 0.08);
+}
+
+select.form-control {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%233A3F41' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1.25rem;
+  padding-right: 2.5rem;
+}
+
+/* Success notification message styling */
+.form-status-msg {
+  display: none;
+  padding: 1.25rem;
+  border-radius: 12px 4px 12px 4px;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-status-msg.success {
+  display: block;
+  background-color: rgba(192, 90, 62, 0.08);
+  border-left: 3px solid var(--co-terracotta);
+  color: var(--co-terracotta);
+}
+
+.submit-btn {
+  width: 100%;
+  background-color: var(--co-terracotta);
+  color: var(--co-white);
+  padding: 1.25rem;
+  font-size: 0.9rem;
+}
+
+.submit-btn:hover {
+  background-color: var(--co-slate);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(192, 90, 62, 0.15);
+}
+
+/* 7. Footer */
+footer {
+  background-color: var(--co-slate);
+  color: rgba(255, 255, 255, 0.6);
+  padding: 5rem 0;
+  font-size: 0.85rem;
+}
+
+.footer-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
+  text-align: center;
+}
+
+.footer-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.footer-slogan {
+  font-family: var(--font-display);
+  color: var(--co-sand);
+  font-size: 1.25rem;
+}
+
+.footer-links {
+  display: flex;
+  list-style: none;
+  gap: 3rem;
+}
+
+.footer-links a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: var(--transition-smooth);
+}
+
+.footer-links a:hover {
+  color: var(--co-terracotta);
+}
+
+.footer-signature {
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 2.5rem;
+  width: 100%;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .packages-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --header-height: 70px;
+  }
+  
+  .section-padding {
+    padding: 5rem 0;
+  }
+  
+  .hero h1 { 
+    font-size: 2.5rem; 
+  }
+  
+  .estimate-container { 
+    padding: 2.5rem; 
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+  
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: var(--header-height);
+    left: 0;
+    width: 100%;
+    background-color: var(--co-white);
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 0;
+    gap: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(58, 63, 65, 0.05);
+  }
+  
+  .nav-links.active {
+    display: flex;
+  }
+  
+  .mobile-toggle {
+    display: flex;
+  }
+  
+  .header-cta {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .packages-grid, .gallery-grid {
+    grid-template-columns: 1fr;
+  }
+}

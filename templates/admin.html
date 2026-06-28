@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Terracotta Painting</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/admin.css">
+</head>
+<body class="admin-body">
+
+  <!-- Nav Header -->
+  <header class="admin-header">
+    <div class="admin-nav">
+      <div class="admin-logo-area">
+        <img src="/static/assets/images/logo.png" alt="Terracotta Painting Logo" class="admin-logo-img">
+        <div class="admin-logo-text">Admin<span>Panel</span></div>
+      </div>
+      <div class="admin-user-menu">
+        <span class="admin-user-info">Logged in as <strong>{{ username }}</strong></span>
+        <a href="/admin/logout" class="btn-logout">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    
+    <!-- Global Summary Stats -->
+    <section class="summary-grid">
+      <div class="summary-card accent">
+        <div class="summary-label">Total Invoiced (Global)</div>
+        <div class="summary-value" id="global-invoiced">$0.00</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Balance Due (Global)</div>
+        <div class="summary-value" id="global-balance">$0.00</div>
+      </div>
+      <div class="summary-card success">
+        <div class="summary-label">Net Profit (Global)</div>
+        <div class="summary-value" id="global-profit">$0.00</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Avg Hourly Earning</div>
+        <div class="summary-value" id="global-hourly">$0.00/hr</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Total Hours Logged</div>
+        <div class="summary-value" id="global-hours">0.0h</div>
+      </div>
+    </section>
+
+    <!-- Main Workspace Layout -->
+    <div class="dashboard-layout">
+      
+      <!-- Left: Projects List Sidebar -->
+      <aside class="sidebar-panel">
+        <div class="sidebar-header">
+          <h2 class="sidebar-title">Projects</h2>
+          <button class="btn-primary" id="btn-new-project">+ New Project</button>
+        </div>
+        
+        <input type="text" class="project-search" id="project-search-input" placeholder="Search projects by name or address...">
+        
+        <div class="project-list" id="project-list-container">
+          <!-- Projects rendered dynamically here -->
+          <p style="text-align: center; color: rgba(58,63,65,0.4); padding: 1rem;">Loading projects...</p>
+        </div>
+      </aside>
+      
+      <!-- Right: Selected Project Detail Panel -->
+      <section class="detail-panel" id="project-detail-panel">
+        
+        <!-- Empty State (Shown when no project is selected) -->
+        <div class="empty-state" id="detail-empty-state">
+          <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+          </svg>
+          <h3 class="empty-state-title">No Project Selected</h3>
+          <p>Select a project from the sidebar to view details, financial breakdowns, expenses, and log hours.</p>
+        </div>
+        
+        <!-- Active Details (Hidden by default, displayed via JS) -->
+        <div class="detail-content" id="detail-active-content" style="display: none;">
+          
+          <div class="detail-header">
+            <div class="detail-title-area">
+              <h2 id="det-project-name">Project Title</h2>
+              <div class="detail-address">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+                <span id="det-project-address">Kitchener, ON</span>
+              </div>
+            </div>
+            <div class="detail-actions">
+              <button class="btn-secondary" id="btn-edit-project">Edit Details</button>
+              <button class="btn-danger" id="btn-delete-project">Delete</button>
+            </div>
+          </div>
+          
+          <!-- Project Resumo Grid (Requirement 3: calculations) -->
+          <div class="project-summary-grid">
+            <div class="project-summary-card">
+              <div class="label">Job Charge</div>
+              <div class="value" id="card-job-charge">$0.00</div>
+            </div>
+            <div class="project-summary-card">
+              <div class="label">Total Invoice (HST inc)</div>
+              <div class="value" id="card-total-invoice">$0.00</div>
+            </div>
+            <div class="project-summary-card balance-due">
+              <div class="label">Balance Due</div>
+              <div class="value" id="card-balance-due">$0.00</div>
+            </div>
+            <div class="project-summary-card">
+              <div class="label">Est. Final Cost</div>
+              <div class="value" id="card-final-cost">$0.00</div>
+            </div>
+            <div class="project-summary-card net-profit">
+              <div class="label">Net Profit</div>
+              <div class="value" id="card-net-profit">$0.00</div>
+            </div>
+            <div class="project-summary-card">
+              <div class="label">Avg Hourly Rate</div>
+              <div class="value" id="card-hourly-rate">$0.00/hr</div>
+            </div>
+          </div>
+          
+          <!-- Tabs Navigation -->
+          <nav class="tabs-nav">
+            <button class="tab-btn active" data-tab="tab-expenses">Expenses & Purchases</button>
+            <button class="tab-btn" data-tab="tab-hours">Hours Logged</button>
+          </nav>
+          
+          <!-- Tab 1: Expenses & Purchases -->
+          <div class="tab-content active" id="tab-expenses">
+            <div class="tab-split-layout">
+              <!-- Left: Expenses Table -->
+              <div class="data-table-wrapper">
+                <table class="data-table" id="expenses-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 80px; text-align: center;">Actions</th>
+                      <th>Amount</th>
+                      <th>Type</th>
+                      <th>Category/Subtype</th>
+                      <th>Tax Inc.</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody id="expenses-list-container">
+                    <!-- Expenses list goes here -->
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- Right: Add Expense Form -->
+              <div class="form-panel">
+                <h3 id="expense-form-title">Record Expense</h3>
+                <form id="add-expense-form">
+                  <input type="hidden" id="expense-id-field">
+                  <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" for="exp-amount">Amount (CAD)</label>
+                    <input type="number" id="exp-amount" class="form-control" step="0.01" min="0.01" placeholder="150.00" required>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" for="exp-type">Type</label>
+                    <select id="exp-type" class="form-control" required>
+                      <option value="Material">Material</option>
+                      <option value="Subcontratado">Subcontractor</option>
+                      <option value="Devolução">Return (Devolução)</option>
+                    </select>
+                  </div>
+                  <div class="form-group" id="exp-subtype-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" for="exp-subtype">Category / Type</label>
+                    <select id="exp-subtype" class="form-control" required>
+                      <!-- Will be filled dynamically by Javascript -->
+                    </select>
+                  </div>
+                  <div class="form-group-checkbox">
+                    <input type="checkbox" id="exp-tax-included">
+                    <label for="exp-tax-included">Tax is already included</label>
+                  </div>
+                  <button type="submit" class="btn-primary" id="btn-submit-expense" style="width: 100%;">Add Expense</button>
+                  <button type="button" class="btn-secondary" id="btn-cancel-expense-edit" style="width: 100%; margin-top: 0.5rem; display: none;">Cancel Edit</button>
+                </form>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Tab 2: Hours Logged -->
+          <div class="tab-content" id="tab-hours">
+            <div class="tab-split-layout">
+              <!-- Left: Hours Table -->
+              <div class="data-table-wrapper">
+                <table class="data-table" id="hours-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 80px; text-align: center;">Actions</th>
+                      <th>Date</th>
+                      <th>Hours Worked</th>
+                      <th>Date Logged</th>
+                    </tr>
+                  </thead>
+                  <tbody id="hours-list-container">
+                    <!-- Hours list goes here -->
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- Right: Add Hours Form -->
+              <div class="form-panel">
+                <h3 id="hours-form-title">Log Hours</h3>
+                <form id="add-hours-form">
+                  <input type="hidden" id="hours-id-field">
+                  <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" for="hours-date">Date of Work</label>
+                    <input type="date" id="hours-date" class="form-control" required>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" for="hours-amount">Hours Worked</label>
+                    <input type="number" id="hours-amount" class="form-control" step="0.25" min="0.25" placeholder="8.0" required>
+                  </div>
+                  <button type="submit" class="btn-primary" id="btn-submit-hours" style="width: 100%;">Log Hours</button>
+                  <button type="button" class="btn-secondary" id="btn-cancel-hours-edit" style="width: 100%; margin-top: 0.5rem; display: none;">Cancel Edit</button>
+                </form>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+      
+    </div>
+  </main>
+
+  <!-- Modal 1: Create Project -->
+  <div class="modal-overlay" id="modal-project">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-project-title">Create Project</h3>
+        <button class="modal-close" id="modal-project-close">&times;</button>
+      </div>
+      <form id="project-form">
+        <input type="hidden" id="project-id-field">
+        
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" for="proj-name">Client/Project Name</label>
+          <input type="text" id="proj-name" class="form-control" placeholder="e.g. John Doe Living Room" required>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" for="proj-address">Address</label>
+          <input type="text" id="proj-address" class="form-control" placeholder="e.g. 123 King St W, Kitchener" required>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="proj-charge">Job Charge (Net)</label>
+            <input type="number" id="proj-charge" class="form-control" step="0.01" min="0" placeholder="2500.00" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="proj-tax">Tax Rate (%)</label>
+            <input type="number" id="proj-tax" class="form-control" step="0.1" min="0" value="13.0" required>
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="proj-downpayment">Down Payments</label>
+            <input type="number" id="proj-downpayment" class="form-control" step="0.01" min="0" value="0.00" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="proj-futurecosts">Est. Future Costs</label>
+            <input type="number" id="proj-futurecosts" class="form-control" step="0.01" min="0" value="0.00" required>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="modal-project-cancel">Cancel</button>
+          <button type="submit" class="btn-primary" id="modal-project-submit">Save Project</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/admin.js"></script>
+</body>
+</html>
