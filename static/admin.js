@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const invDueDate = document.getElementById('inv-due-date');
   const invNotes = document.getElementById('inv-notes');
   const btnAddInvoiceItem = document.getElementById('btn-add-invoice-item');
+  const sessionInvoices = {};
   
   // Forms
   const addExpenseForm = document.getElementById('add-expense-form');
@@ -248,9 +249,53 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span style="font-size: 0.75rem; color: rgba(58,63,65,0.7);">${escapeHTML(inv.client_name)} - CAD $${inv.amount.toFixed(2)}</span>
               </div>
             </a>
-            <div class="inv-date">${formattedDate}</div>
+            <div class="inv-actions" style="display: flex; align-items: center; gap: 0.35rem;">
+              <span class="inv-date">${formattedDate}</span>
+              <button type="button" class="btn-action-icon btn-edit" title="Edit/Reload details">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+              </button>
+              <button type="button" class="btn-action-icon btn-delete" title="Delete Telegram Invoice">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>
           </div>
         `;
+        
+        // Add Edit Listener
+        li.querySelector('.btn-edit').addEventListener('click', () => {
+          invClientName.value = inv.client_name;
+          invClientAddress.value = "";
+          invTaxRate.value = 13;
+          invDownPayments.value = "0.00";
+          invDueDate.value = "Upon Receipt";
+          invNotes.value = `Telegram Invoice ${inv.invoice_number}`;
+          
+          invoiceItemsContainer.innerHTML = '';
+          const subtotal = inv.amount / 1.13;
+          addInvoiceItemRow("Painting Services (Telegram Import)", 1, parseFloat(subtotal.toFixed(2)));
+        });
+        
+        // Add Delete Listener
+        li.querySelector('.btn-delete').addEventListener('click', async () => {
+          if (confirm(`Are you sure you want to delete Telegram invoice ${inv.invoice_number}?`)) {
+            try {
+              const deleteResp = await fetch(`/api/invoices/telegram/${inv.id}`, {
+                method: 'DELETE'
+              });
+              if (deleteResp.ok) {
+                li.remove();
+                if (telegramInvoiceList.children.length === 0) {
+                  telegramInvoicesStatus.style.display = 'block';
+                }
+              } else {
+                alert('Failed to delete invoice.');
+              }
+            } catch (err) {
+              console.error(err);
+            }
+          }
+        });
+        
         telegramInvoiceList.appendChild(li);
       });
     } catch (error) {
@@ -879,9 +924,20 @@ document.addEventListener('DOMContentLoaded', () => {
           generatedInvoicesStatus.style.display = 'none';
         }
         
+        // Save details in memory for editing
+        sessionInvoices[result.filename] = {
+          client_name: payload.client_name,
+          client_address: payload.client_address,
+          tax_rate: payload.tax_rate,
+          down_payments: payload.down_payments,
+          due_date: payload.due_date,
+          notes: payload.notes,
+          items: payload.items
+        };
+        
         // Append item to the download list
         const li = document.createElement('li');
-        const now = new Date().toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
+        const nowStr = new Date().toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
         li.innerHTML = `
           <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
             <a href="${result.url}" target="_blank" download style="display: flex; align-items: center; text-decoration: none; color: var(--admin-accent);">
@@ -890,9 +946,57 @@ document.addEventListener('DOMContentLoaded', () => {
               </svg>
               <strong>${escapeHTML(result.filename)}</strong>
             </a>
-            <div class="inv-date">Generated at ${now}</div>
+            <div class="inv-actions" style="display: flex; align-items: center; gap: 0.35rem;">
+              <span class="inv-date">At ${nowStr}</span>
+              <button type="button" class="btn-action-icon btn-edit" title="Edit/Reload details">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+              </button>
+              <button type="button" class="btn-action-icon btn-delete" title="Delete Invoice">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>
           </div>
         `;
+        
+        // Add Edit Listener
+        li.querySelector('.btn-edit').addEventListener('click', () => {
+          const details = sessionInvoices[result.filename];
+          if (details) {
+            invClientName.value = details.client_name;
+            invClientAddress.value = details.client_address;
+            invTaxRate.value = Math.round(details.tax_rate);
+            invDownPayments.value = details.down_payments.toFixed(2);
+            invDueDate.value = details.due_date;
+            invNotes.value = details.notes || "";
+            
+            invoiceItemsContainer.innerHTML = '';
+            details.items.forEach(item => {
+              addInvoiceItemRow(item.desc, item.qty, item.price);
+            });
+          }
+        });
+        
+        // Add Delete Listener
+        li.querySelector('.btn-delete').addEventListener('click', async () => {
+          if (confirm(`Are you sure you want to delete invoice ${result.filename}?`)) {
+            try {
+              const deleteResp = await fetch(`/api/invoices/session/${encodeURIComponent(result.filename)}`, {
+                method: 'DELETE'
+              });
+              if (deleteResp.ok) {
+                li.remove();
+                delete sessionInvoices[result.filename];
+                if (invoiceDownloadList.children.length === 0 && generatedInvoicesStatus) {
+                  generatedInvoicesStatus.style.display = 'block';
+                }
+              } else {
+                alert('Failed to delete invoice file.');
+              }
+            } catch (err) {
+              console.error(err);
+            }
+          }
+        });
         invoiceDownloadList.appendChild(li);
         
       } catch (error) {

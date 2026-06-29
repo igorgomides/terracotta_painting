@@ -787,3 +787,36 @@ body.admin-body {
   font-size: 0.75rem;
   color: rgba(58, 63, 65, 0.5);
 }
+
+.invoice-download-list li .inv-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.invoice-download-list li .btn-action-icon {
+  background: none;
+  border: none;
+  padding: 0.3rem;
+  border-radius: 6px;
+  cursor: pointer;
+  color: rgba(58,63,65,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.invoice-download-list li .btn-action-icon:hover {
+  background-color: rgba(58,63,65,0.08);
+}
+
+.invoice-download-list li .btn-action-icon.btn-delete:hover {
+  color: var(--admin-error);
+  background-color: rgba(220,53,69,0.08);
+}
+
+.invoice-download-list li .btn-action-icon.btn-edit:hover {
+  color: var(--admin-accent);
+  background-color: rgba(74,144,226,0.08);
+}
