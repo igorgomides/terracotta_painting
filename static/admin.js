@@ -65,6 +65,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const invNotes = document.getElementById('inv-notes');
   const btnAddInvoiceItem = document.getElementById('btn-add-invoice-item');
   const sessionInvoices = {};
+
+  // Global Invoices DOM
+  const btnGlobalInvoices = document.getElementById('btn-global-invoices');
+  const globalInvoicesContent = document.getElementById('global-invoices-content');
+  const globalInvoicesList = document.getElementById('global-invoices-list');
+  const globalInvoicesStatus = document.getElementById('global-invoices-status');
   
   // Forms
   const addExpenseForm = document.getElementById('add-expense-form');
@@ -416,7 +422,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // UI layout toggle
     detailEmptyState.style.display = 'none';
+    if (globalInvoicesContent) globalInvoicesContent.style.display = 'none';
     detailActiveContent.style.display = 'block';
+    if (btnGlobalInvoices) btnGlobalInvoices.classList.remove('active');
 
     // Set Text Values
     detProjectName.textContent = project.name;
@@ -452,14 +460,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch associated lists
     fetchExpenses(project.id);
     fetchHours(project.id);
+    fetchProjectInvoices(project.id);
   };
 
   // Deselect project
   const deselectProject = () => {
     state.selectedProjectId = null;
     detailActiveContent.style.display = 'none';
+    if (globalInvoicesContent) globalInvoicesContent.style.display = 'none';
     detailEmptyState.style.display = 'flex';
     document.querySelectorAll('.project-item').forEach(el => el.classList.remove('active'));
+    if (btnGlobalInvoices) btnGlobalInvoices.classList.remove('active');
   };
 
   // Render expenses table
@@ -935,69 +946,8 @@ document.addEventListener('DOMContentLoaded', () => {
           items: payload.items
         };
         
-        // Append item to the download list
-        const li = document.createElement('li');
-        const nowStr = new Date().toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
-        li.innerHTML = `
-          <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
-            <a href="${result.url}" target="_blank" download style="display: flex; align-items: center; text-decoration: none; color: var(--admin-accent);">
-              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 0.3rem;">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-              </svg>
-              <strong>${escapeHTML(result.filename)}</strong>
-            </a>
-            <div class="inv-actions" style="display: flex; align-items: center; gap: 0.35rem;">
-              <span class="inv-date">At ${nowStr}</span>
-              <button type="button" class="btn-action-icon btn-edit" title="Edit/Reload details">
-                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-              </button>
-              <button type="button" class="btn-action-icon btn-delete" title="Delete Invoice">
-                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-              </button>
-            </div>
-          </div>
-        `;
-        
-        // Add Edit Listener
-        li.querySelector('.btn-edit').addEventListener('click', () => {
-          const details = sessionInvoices[result.filename];
-          if (details) {
-            invClientName.value = details.client_name;
-            invClientAddress.value = details.client_address;
-            invTaxRate.value = Math.round(details.tax_rate);
-            invDownPayments.value = details.down_payments.toFixed(2);
-            invDueDate.value = details.due_date;
-            invNotes.value = details.notes || "";
-            
-            invoiceItemsContainer.innerHTML = '';
-            details.items.forEach(item => {
-              addInvoiceItemRow(item.desc, item.qty, item.price);
-            });
-          }
-        });
-        
-        // Add Delete Listener
-        li.querySelector('.btn-delete').addEventListener('click', async () => {
-          if (confirm(`Are you sure you want to delete invoice ${result.filename}?`)) {
-            try {
-              const deleteResp = await fetch(`/api/invoices/session/${encodeURIComponent(result.filename)}`, {
-                method: 'DELETE'
-              });
-              if (deleteResp.ok) {
-                li.remove();
-                delete sessionInvoices[result.filename];
-                if (invoiceDownloadList.children.length === 0 && generatedInvoicesStatus) {
-                  generatedInvoicesStatus.style.display = 'block';
-                }
-              } else {
-                alert('Failed to delete invoice file.');
-              }
-            } catch (err) {
-              console.error(err);
-            }
-          }
-        });
-        invoiceDownloadList.appendChild(li);
+        // Refresh project invoices list from database
+        fetchProjectInvoices(state.selectedProjectId);
         
       } catch (error) {
         console.error(error);
@@ -1030,6 +980,213 @@ document.addEventListener('DOMContentLoaded', () => {
   // Wire Cancel Edit Buttons
   if (btnCancelExpenseEdit) btnCancelExpenseEdit.addEventListener('click', cancelExpenseEdit);
   if (btnCancelHoursEdit) btnCancelHoursEdit.addEventListener('click', cancelHoursEdit);
+
+  // Fetch project-specific invoices
+  const fetchProjectInvoices = async (projectId) => {
+    if (!invoiceDownloadList) return;
+    try {
+      const response = await fetch(`/api/projects/${projectId}/invoices`);
+      if (!response.ok) throw new Error('Failed to fetch project invoices.');
+      const invoices = await response.json();
+      
+      if (invoices.length === 0) {
+        generatedInvoicesStatus.innerHTML = `<p style="color: rgba(58,63,65,0.6); font-size: 0.9rem; text-align: center; padding: 1rem 0;">No invoices generated for this project yet.</p>`;
+        generatedInvoicesStatus.style.display = 'block';
+        invoiceDownloadList.innerHTML = '';
+        return;
+      }
+      
+      generatedInvoicesStatus.style.display = 'none';
+      invoiceDownloadList.innerHTML = '';
+      
+      invoices.forEach(inv => {
+        const li = document.createElement('li');
+        const formattedDate = new Date(inv.created_at).toLocaleDateString('en-CA', {
+          year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        li.innerHTML = `
+          <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+            <a href="${inv.url}" target="_blank" download style="display: flex; align-items: center; text-decoration: none; color: var(--admin-accent);">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 0.3rem;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              <div style="display: flex; flex-direction: column;">
+                <strong>${escapeHTML(inv.invoice_number)}</strong>
+                <span style="font-size: 0.75rem; color: rgba(58,63,65,0.7);">${escapeHTML(inv.client_name)} - CAD $${inv.amount.toFixed(2)}</span>
+              </div>
+            </a>
+            <div class="inv-actions" style="display: flex; align-items: center; gap: 0.35rem;">
+              <span class="inv-date">${formattedDate}</span>
+              <button type="button" class="btn-action-icon btn-edit" title="Edit/Reload details">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+              </button>
+              <button type="button" class="btn-action-icon btn-delete" title="Delete Invoice">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>
+          </div>
+        `;
+        
+        // Add Edit Listener
+        li.querySelector('.btn-edit').addEventListener('click', () => {
+          const details = sessionInvoices[inv.filename];
+          if (details) {
+            invClientName.value = details.client_name;
+            invClientAddress.value = details.client_address;
+            invTaxRate.value = Math.round(details.tax_rate);
+            invDownPayments.value = details.down_payments.toFixed(2);
+            invDueDate.value = details.due_date;
+            invNotes.value = details.notes || "";
+            
+            invoiceItemsContainer.innerHTML = '';
+            details.items.forEach(item => {
+              addInvoiceItemRow(item.desc, item.qty, item.price);
+            });
+          } else {
+            invClientName.value = inv.client_name;
+            invClientAddress.value = "";
+            invTaxRate.value = 13;
+            invDownPayments.value = "0.00";
+            invDueDate.value = "Upon Receipt";
+            invNotes.value = "";
+            
+            invoiceItemsContainer.innerHTML = '';
+            const subtotal = inv.amount / 1.13;
+            addInvoiceItemRow("Painting Services", 1, parseFloat(subtotal.toFixed(2)));
+          }
+        });
+        
+        // Add Delete Listener
+        li.querySelector('.btn-delete').addEventListener('click', async () => {
+          if (confirm(`Are you sure you want to delete invoice ${inv.invoice_number}?`)) {
+            try {
+              const deleteResp = await fetch(`/api/invoices/project/${inv.id}`, {
+                method: 'DELETE'
+              });
+              if (deleteResp.ok) {
+                li.remove();
+                delete sessionInvoices[inv.filename];
+                if (invoiceDownloadList.children.length === 0) {
+                  generatedInvoicesStatus.style.display = 'block';
+                }
+              } else {
+                alert('Failed to delete invoice.');
+              }
+            } catch (err) {
+              console.error(err);
+            }
+          }
+        });
+        
+        invoiceDownloadList.appendChild(li);
+      });
+    } catch (error) {
+      console.error(error);
+      if (generatedInvoicesStatus) {
+        generatedInvoicesStatus.innerHTML = `<p style="color: var(--admin-error); font-size: 0.9rem; text-align: center; padding: 1rem 0;">Error loading project invoices.</p>`;
+      }
+    }
+  };
+
+  // Fetch all global invoices (Website + Telegram)
+  const fetchGlobalInvoices = async () => {
+    if (!globalInvoicesList) return;
+    try {
+      const response = await fetch('/api/invoices/all');
+      if (!response.ok) throw new Error('Failed to fetch global invoices.');
+      const invoices = await response.json();
+      
+      if (invoices.length === 0) {
+        globalInvoicesStatus.innerHTML = `<p style="color: rgba(58,63,65,0.6); font-size: 0.9rem; text-align: center; padding: 2rem 0;">No invoices generated yet.</p>`;
+        globalInvoicesStatus.style.display = 'block';
+        globalInvoicesList.innerHTML = '';
+        return;
+      }
+      
+      globalInvoicesStatus.style.display = 'none';
+      globalInvoicesList.innerHTML = '';
+      
+      invoices.forEach(inv => {
+        const li = document.createElement('li');
+        const formattedDate = new Date(inv.created_at).toLocaleDateString('en-CA', {
+          year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        
+        const badgeColor = inv.source === 'Telegram' ? 'rgba(74, 144, 226, 0.15)' : 'rgba(46, 204, 113, 0.15)';
+        const badgeText = inv.source === 'Telegram' ? 'Telegram' : 'Website';
+        const badgeTextColor = inv.source === 'Telegram' ? '#2980b9' : '#27ae60';
+        
+        li.innerHTML = `
+          <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+            <a href="${inv.url}" target="_blank" download style="display: flex; align-items: center; text-decoration: none; color: var(--admin-accent);">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 0.3rem;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              <div style="display: flex; flex-direction: column;">
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <strong>${escapeHTML(inv.invoice_number)}</strong>
+                  <span style="font-size: 0.7rem; padding: 0.1rem 0.3rem; border-radius: 4px; background-color: ${badgeColor}; color: ${badgeTextColor}; font-weight: 600;">${badgeText}</span>
+                </div>
+                <span style="font-size: 0.75rem; color: rgba(58,63,65,0.7);">Billed to: ${escapeHTML(inv.client_name)} - CAD $${inv.amount.toFixed(2)}</span>
+                <span style="font-size: 0.7rem; color: rgba(58,63,65,0.5);">Project: ${escapeHTML(inv.project_name)}</span>
+              </div>
+            </a>
+            <div class="inv-actions" style="display: flex; align-items: center; gap: 0.35rem;">
+              <span class="inv-date">${formattedDate}</span>
+              <button type="button" class="btn-action-icon btn-delete" title="Delete Invoice">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>
+          </div>
+        `;
+        
+        // Add Delete Listener
+        li.querySelector('.btn-delete').addEventListener('click', async () => {
+          if (confirm(`Are you sure you want to delete invoice ${inv.invoice_number}?`)) {
+            try {
+              const url = inv.source === 'Telegram' 
+                ? `/api/invoices/telegram/${inv.id}` 
+                : `/api/invoices/project/${inv.id}`;
+                
+              const deleteResp = await fetch(url, { method: 'DELETE' });
+              if (deleteResp.ok) {
+                li.remove();
+                if (globalInvoicesList.children.length === 0) {
+                  globalInvoicesStatus.style.display = 'block';
+                }
+              } else {
+                alert('Failed to delete invoice.');
+              }
+            } catch (err) {
+              console.error(err);
+            }
+          }
+        });
+        
+        globalInvoicesList.appendChild(li);
+      });
+    } catch (error) {
+      console.error(error);
+      if (globalInvoicesStatus) {
+        globalInvoicesStatus.innerHTML = `<p style="color: var(--admin-error); font-size: 0.9rem; text-align: center; padding: 2rem 0;">Error loading global invoices.</p>`;
+      }
+    }
+  };
+
+  // Wire Global Invoices Button click event
+  if (btnGlobalInvoices) {
+    btnGlobalInvoices.addEventListener('click', () => {
+      state.selectedProjectId = null;
+      document.querySelectorAll('.project-item').forEach(el => el.classList.remove('active'));
+      btnGlobalInvoices.classList.add('active');
+      
+      detailEmptyState.style.display = 'none';
+      detailActiveContent.style.display = 'none';
+      if (globalInvoicesContent) globalInvoicesContent.style.display = 'block';
+      
+      fetchGlobalInvoices();
+    });
+  }
 
   // --- Initial Launch ---
   fetchProjects();

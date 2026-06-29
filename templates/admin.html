@@ -73,6 +73,21 @@
         
         <input type="text" class="project-search" id="project-search-input" placeholder="Search projects by name or address...">
         
+        <!-- Global Invoices Portal Button -->
+        <div style="margin-bottom: 0.8rem;">
+          <button class="project-item" id="btn-global-invoices" style="width: 100%; border: 1px solid rgba(74, 144, 226, 0.2); background-color: rgba(74, 144, 226, 0.05); color: var(--admin-accent); font-weight: 600; padding: 0.8rem 1rem; border-radius: 12px 3px 12px 3px; display: flex; align-items: center; gap: 0.5rem; justify-content: space-between; cursor: pointer; transition: all 0.2s ease; box-sizing: border-box;">
+            <span style="display: flex; align-items: center; gap: 0.5rem;">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              <span>Global Invoices Portal</span>
+            </span>
+            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </button>
+        </div>
+        
         <div class="project-list" id="project-list-container">
           <!-- Projects rendered dynamically here -->
           <p style="text-align: center; color: rgba(58,63,65,0.4); padding: 1rem;">Loading projects...</p>
@@ -322,6 +337,33 @@
             </div>
           </div>
           
+        </div>
+
+        <!-- Global Invoices Portal Content -->
+        <div class="detail-active-content" id="global-invoices-content" style="display: none; padding: 2rem;">
+          <div class="detail-header" style="border-bottom: 1px solid rgba(58, 63, 65, 0.08); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+            <div>
+              <h2 class="detail-project-name" style="font-family: 'Comfortaa', sans-serif; font-size: 1.5rem; color: var(--admin-dark); margin: 0;">Global Invoices Portal</h2>
+              <p class="detail-project-address" style="margin: 0.2rem 0 0 0; font-size: 0.9rem; color: rgba(58, 63, 65, 0.6);">Overview of all invoices across your business</p>
+            </div>
+          </div>
+          
+          <div class="form-panel" style="background-color: var(--admin-white); padding: 1.5rem; border-radius: 16px 4px 16px 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid rgba(58, 63, 65, 0.05);">
+            <h3 style="font-family: 'Comfortaa', sans-serif; font-size: 1.1rem; margin-top: 0; margin-bottom: 1.2rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; color: var(--admin-dark);">
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+              </svg>
+              <span>All Invoices (Website & TeleGravity)</span>
+            </h3>
+            
+            <div id="global-invoices-status">
+              <p style="color: rgba(58,63,65,0.6); font-size: 0.9rem; text-align: center; padding: 2rem 0;">No invoices generated yet.</p>
+            </div>
+            
+            <ul class="invoice-download-list" id="global-invoices-list" style="margin-top: 1rem;">
+              <!-- All invoices list goes here -->
+            </ul>
+          </div>
         </div>
       </section>
       
