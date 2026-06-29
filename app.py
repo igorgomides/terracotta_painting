@@ -602,6 +602,46 @@ def upload_telegram_invoice():
         
     return jsonify({'error': 'Invalid file type. Only PDFs are allowed.'}), 400
 
+@app.route('/api/invoices/telegram/<int:invoice_id>', methods=['DELETE'])
+@login_required
+def delete_telegram_invoice(invoice_id):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT filename FROM telegram_invoices WHERE id = ?", (invoice_id,))
+    row = cursor.fetchone()
+    if not row:
+        return jsonify({'error': 'Invoice not found'}), 404
+        
+    filename = row['filename']
+    cursor.execute("DELETE FROM telegram_invoices WHERE id = ?", (invoice_id,))
+    db.commit()
+    
+    # Try to delete file
+    try:
+        file_path = os.path.join(app.root_path, 'static', 'invoices', 'telegram', filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+    except Exception as e:
+        app.logger.error(f"Failed to delete telegram invoice file: {e}")
+        
+    return jsonify({'success': True})
+
+@app.route('/api/invoices/session/<string:filename>', methods=['DELETE'])
+@login_required
+def delete_session_invoice(filename):
+    if '..' in filename or '/' in filename or '\\' in filename:
+        return jsonify({'error': 'Invalid filename'}), 400
+        
+    file_path = os.path.join(app.root_path, 'static', 'invoices', filename)
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'File not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     # Default local dev port 8080
     app.run(host='0.0.0.0', port=8080, debug=True)
