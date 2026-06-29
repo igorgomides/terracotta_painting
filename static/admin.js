@@ -52,6 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const invoiceItemsContainer = document.getElementById('invoice-items-container');
   const invoiceDownloadList = document.getElementById('invoice-download-list');
   const generatedInvoicesStatus = document.getElementById('generated-invoices-status');
+  const telegramInvoiceList = document.getElementById('telegram-invoice-list');
+  const telegramInvoicesStatus = document.getElementById('telegram-invoices-status');
   
   // Invoice form fields
   const generateInvoiceForm = document.getElementById('generate-invoice-form');
@@ -207,6 +209,53 @@ document.addEventListener('DOMContentLoaded', () => {
       renderHours(hoursList);
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  // Fetch Telegram invoices
+  const fetchTelegramInvoices = async () => {
+    if (!telegramInvoiceList) return;
+    try {
+      const response = await fetch('/api/invoices/telegram');
+      if (!response.ok) throw new Error('Failed to fetch Telegram invoices.');
+      const invoices = await response.json();
+      
+      if (invoices.length === 0) {
+        telegramInvoicesStatus.innerHTML = `<p style="color: rgba(58,63,65,0.6); font-size: 0.9rem; text-align: center; padding: 1rem 0;">No invoices generated via Telegram yet.</p>`;
+        telegramInvoicesStatus.style.display = 'block';
+        telegramInvoiceList.innerHTML = '';
+        return;
+      }
+      
+      telegramInvoicesStatus.style.display = 'none';
+      telegramInvoiceList.innerHTML = '';
+      
+      invoices.forEach(inv => {
+        const li = document.createElement('li');
+        const formattedDate = new Date(inv.created_at).toLocaleDateString('en-CA', {
+          year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        li.innerHTML = `
+          <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+            <a href="${inv.url}" target="_blank" download style="display: flex; align-items: center; text-decoration: none; color: var(--admin-accent);">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 0.3rem;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              <div style="display: flex; flex-direction: column;">
+                <strong>${escapeHTML(inv.invoice_number)}</strong>
+                <span style="font-size: 0.75rem; color: rgba(58,63,65,0.7);">${escapeHTML(inv.client_name)} - CAD $${inv.amount.toFixed(2)}</span>
+              </div>
+            </a>
+            <div class="inv-date">${formattedDate}</div>
+          </div>
+        `;
+        telegramInvoiceList.appendChild(li);
+      });
+    } catch (error) {
+      console.error(error);
+      if (telegramInvoicesStatus) {
+        telegramInvoicesStatus.innerHTML = `<p style="color: var(--admin-error); font-size: 0.9rem; text-align: center; padding: 1rem 0;">Error loading Telegram invoices.</p>`;
+      }
     }
   };
 
@@ -753,6 +802,10 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('active');
       const tabId = btn.getAttribute('data-tab');
       document.getElementById(tabId).classList.add('active');
+      
+      if (tabId === 'tab-invoices') {
+        fetchTelegramInvoices();
+      }
     });
   });
 

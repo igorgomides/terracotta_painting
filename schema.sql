@@ -41,3 +41,13 @@ CREATE TABLE IF NOT EXISTS hours (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
 );
+
+-- Table for tracking invoices generated via Telegram Bot
+CREATE TABLE IF NOT EXISTS telegram_invoices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    invoice_number TEXT NOT NULL,
+    client_name TEXT NOT NULL,
+    amount REAL NOT NULL,
+    filename TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -524,6 +524,75 @@ def generate_project_invoice(project_id):
     except Exception as e:
         return jsonify({'error': f'Failed to generate invoice: {str(e)}'}), 500
 
+@app.route('/api/invoices/telegram', methods=['GET'])
+@login_required
+def get_telegram_invoices():
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM telegram_invoices ORDER BY created_at DESC")
+    rows = cursor.fetchall()
+    
+    invoices = []
+    for r in rows:
+        invoices.append({
+            'id': r['id'],
+            'invoice_number': r['invoice_number'],
+            'client_name': r['client_name'],
+            'amount': r['amount'],
+            'filename': r['filename'],
+            'url': f'/static/invoices/telegram/{r["filename"]}',
+            'created_at': r['created_at']
+        })
+    return jsonify(invoices)
+
+@app.route('/api/invoices/telegram_upload', methods=['POST'])
+def upload_telegram_invoice():
+    # Simple Bearer Token authentication using app.secret_key
+    auth_header = request.headers.get('Authorization')
+    expected_token = f"Bearer {app.secret_key}"
+    if not auth_header or auth_header != expected_token:
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+        
+    invoice_number = request.form.get('invoice_number')
+    client_name = request.form.get('client_name')
+    try:
+        amount = float(request.form.get('amount', 0))
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Amount must be numeric'}), 400
+        
+    if not invoice_number or not client_name:
+        return jsonify({'error': 'Invoice number and client name are required'}), 400
+        
+    if file and file.filename.endswith('.pdf'):
+        # Ensure target folder exists
+        invoice_dir = os.path.join(app.root_path, 'static', 'invoices', 'telegram')
+        if not os.path.exists(invoice_dir):
+            os.makedirs(invoice_dir)
+            
+        filename = file.filename
+        dest_path = os.path.join(invoice_dir, filename)
+        file.save(dest_path)
+        
+        # Save to database
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            "INSERT INTO telegram_invoices (invoice_number, client_name, amount, filename) VALUES (?, ?, ?, ?)",
+            (invoice_number, client_name, amount, filename)
+        )
+        db.commit()
+        
+        return jsonify({'success': True, 'filename': filename}), 201
+        
+    return jsonify({'error': 'Invalid file type. Only PDFs are allowed.'}), 400
+
 if __name__ == '__main__':
     # Default local dev port 8080
     app.run(host='0.0.0.0', port=8080, debug=True)

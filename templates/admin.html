@@ -294,12 +294,20 @@
 
               <!-- Right: Generated Invoices list -->
               <div class="form-panel" style="background-color: var(--admin-white);">
-                <h3 style="font-family: 'Comfortaa', sans-serif; font-size: 1.1rem; margin-top: 0; margin-bottom: 1.2rem; font-weight: 600;">Generated Invoices</h3>
+                <h3 style="font-family: 'Comfortaa', sans-serif; font-size: 1.1rem; margin-top: 0; margin-bottom: 1.2rem; font-weight: 600;">Generated Invoices (This Session)</h3>
                 <div id="generated-invoices-status">
                   <p style="color: rgba(58,63,65,0.6); font-size: 0.9rem; text-align: center; padding: 1rem 0;">No invoices generated in this session yet.</p>
                 </div>
-                <ul class="invoice-download-list" id="invoice-download-list">
+                <ul class="invoice-download-list" id="invoice-download-list" style="margin-bottom: 2rem;">
                   <!-- Generated PDFs will appear here -->
+                </ul>
+
+                <h3 style="font-family: 'Comfortaa', sans-serif; font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 1.2rem; font-weight: 600; border-top: 1px solid rgba(58, 63, 65, 0.08); padding-top: 1.5rem;">TeleGravity Bot Invoices</h3>
+                <div id="telegram-invoices-status">
+                  <p style="color: rgba(58,63,65,0.6); font-size: 0.9rem; text-align: center; padding: 1rem 0;">Loading Telegram invoices...</p>
+                </div>
+                <ul class="invoice-download-list" id="telegram-invoice-list">
+                  <!-- Telegram PDFs will appear here -->
                 </ul>
               </div>
             </div>
