@@ -37,6 +37,15 @@ This log summarizes the features, design changes, and assets completed for **Ter
 - **Production Credentials**: Created and filled the `.env` configuration file with the bot's credentials, database settings, and secure token for the website API integration.
 - **Background Daemon Process**: Created the `start_bot.sh` script to stop any running bot instances and run the bot persistently in the background using `nohup`.
 
+### 6. Invoice Management, Segmentation & Global Portal
+- **Database Persistence**: Created an `invoices` table to store website-generated project invoices, enabling persistent history tracking and reliable deletion instead of memory-only session storage.
+- **Project-Exclusive Segmentation**: Modified the project-specific dashboard to load and display only the invoices belonging to the selected client/project (instead of listing all faturas across all projects).
+- **Global Invoices Portal**: Created a dedicated "Global Invoices Portal" button in the sidebar. Clicking it switches the dashboard to a unified screen listing all invoices across all projects (Website) and those uploaded by the Telegram bot in one master history list.
+- **Delete API Endpoints**: Added endpoints `DELETE /api/invoices/project/<id>` and `DELETE /api/invoices/telegram/<id>` to safely remove records from the database and delete their respective PDF files from the server.
+- **Client-side Actions (Edit & Delete)**: Integrated pencil (edit) and trash can (delete) icon buttons on all invoice lists. Clicking the edit icon pre-populates the creator form with that invoice's exact parameters (including down payments and notes) for instant modifications and regeneration.
+- **PDF Layout & Header Updates**: Updated the PDF header to print the full Escala Solutions business details (Business Number, Sedgewood Address, Email, and Phone). Added support for custom service description notes printed above payment terms.
+- **Filename Customization & Auto-Detection**: Filenames are now capitalized (`Invoice_...`) and append the sanitized property/client address. The prefix dynamically switches between `Invoice_Maintenance_...` and `Invoice_Painting_Service_...` by scanning line items for keywords (like "maintenance" or "manutenção").
+
 ---
 
 ## 🚀 Completed Milestones - June 27, 2026
