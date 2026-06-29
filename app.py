@@ -493,6 +493,11 @@ def generate_project_invoice(project_id):
     except (ValueError, TypeError):
         tax_rate = 0.13
 
+    try:
+        down_payments = float(data.get('down_payments', 0.0))
+    except (ValueError, TypeError):
+        down_payments = 0.0
+
     if not client_name or not client_address or not items:
         return jsonify({'error': 'Client name, address, and at least one item are required.'}), 400
 
@@ -503,7 +508,8 @@ def generate_project_invoice(project_id):
             client_address=client_address,
             items=items,
             tax_rate=tax_rate,
-            due_date=due_date
+            due_date=due_date,
+            down_payments=down_payments
         )
         
         # Ensure target folder exists

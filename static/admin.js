@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const invClientName = document.getElementById('inv-client-name');
   const invClientAddress = document.getElementById('inv-client-address');
   const invTaxRate = document.getElementById('inv-tax-rate');
+  const invDownPayments = document.getElementById('inv-downpayments');
   const invDueDate = document.getElementById('inv-due-date');
   const btnAddInvoiceItem = document.getElementById('btn-add-invoice-item');
   
@@ -387,10 +388,11 @@ document.addEventListener('DOMContentLoaded', () => {
     cardLabor.textContent = formatCurrency(project.total_labor || 0);
     
     // Pre-populate invoice form
-    if (invClientName && invClientAddress && invTaxRate && invDueDate && invoiceItemsContainer) {
+    if (invClientName && invClientAddress && invTaxRate && invDownPayments && invDueDate && invoiceItemsContainer) {
       invClientName.value = project.name;
       invClientAddress.value = project.address;
       invTaxRate.value = Math.round(project.tax_rate);
+      invDownPayments.value = project.down_payments.toFixed(2);
       invDueDate.value = "Upon Receipt";
       
       // Clear items container
@@ -845,6 +847,7 @@ document.addEventListener('DOMContentLoaded', () => {
         client_name: invClientName.value,
         client_address: invClientAddress.value,
         tax_rate: parseFloat(invTaxRate.value) || 0,
+        down_payments: parseFloat(invDownPayments.value) || 0,
         due_date: invDueDate.value,
         items: items
       };
