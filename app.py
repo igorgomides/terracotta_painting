@@ -498,6 +498,8 @@ def generate_project_invoice(project_id):
     except (ValueError, TypeError):
         down_payments = 0.0
 
+    notes = data.get('notes', '')
+
     if not client_name or not client_address or not items:
         return jsonify({'error': 'Client name, address, and at least one item are required.'}), 400
 
@@ -509,7 +511,8 @@ def generate_project_invoice(project_id):
             items=items,
             tax_rate=tax_rate,
             due_date=due_date,
-            down_payments=down_payments
+            down_payments=down_payments,
+            notes=notes
         )
         
         # Ensure target folder exists

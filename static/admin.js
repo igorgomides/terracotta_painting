@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const invTaxRate = document.getElementById('inv-tax-rate');
   const invDownPayments = document.getElementById('inv-downpayments');
   const invDueDate = document.getElementById('inv-due-date');
+  const invNotes = document.getElementById('inv-notes');
   const btnAddInvoiceItem = document.getElementById('btn-add-invoice-item');
   
   // Forms
@@ -394,6 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
       invTaxRate.value = Math.round(project.tax_rate);
       invDownPayments.value = project.down_payments.toFixed(2);
       invDueDate.value = "Upon Receipt";
+      if (invNotes) invNotes.value = "";
       
       // Clear items container
       invoiceItemsContainer.innerHTML = '';
@@ -849,6 +851,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tax_rate: parseFloat(invTaxRate.value) || 0,
         down_payments: parseFloat(invDownPayments.value) || 0,
         due_date: invDueDate.value,
+        notes: invNotes ? invNotes.value : '',
         items: items
       };
       
