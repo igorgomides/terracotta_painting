@@ -153,8 +153,14 @@ def get_projects():
                 
         materials_and_subcontracted = total_expenses
                 
+        # Fetch services sum for the project
+        cursor.execute("SELECT SUM(amount) FROM services WHERE project_id = ?", (proj['id'],))
+        srv_sum_row = cursor.fetchone()
+        srv_sum = srv_sum_row[0] if srv_sum_row and srv_sum_row[0] is not None else 0.0
+                
         # Financial Calculations (per requirements)
-        job_charge = proj['job_charge']
+        initial_job_charge = proj['job_charge']
+        job_charge = initial_job_charge + srv_sum
         tax_rate = proj['tax_rate']
         down_payments = proj['down_payments']
         future_costs_estimate = proj['future_costs_estimate']
@@ -179,6 +185,7 @@ def get_projects():
             'id': proj['id'],
             'name': proj['name'],
             'address': proj['address'],
+            'initial_job_charge': initial_job_charge,
             'job_charge': job_charge,
             'tax_rate': tax_rate,
             'down_payments': down_payments,
@@ -747,6 +754,89 @@ def get_all_invoices():
     # Sort all by created_at DESC
     all_invoices.sort(key=lambda x: x['created_at'], reverse=True)
     return jsonify(all_invoices)
+
+# --- SERVICES / EXTRAS API ---
+
+@app.route('/api/projects/<int:project_id>/services', methods=['GET'])
+@login_required
+def get_project_services(project_id):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM services WHERE project_id = ? ORDER BY created_at DESC", (project_id,))
+    rows = cursor.fetchall()
+    services = []
+    for r in rows:
+        services.append({
+            'id': r['id'],
+            'project_id': r['project_id'],
+            'description': r['description'],
+            'amount': r['amount'],
+            'created_at': r['created_at']
+        })
+    return jsonify(services)
+
+@app.route('/api/projects/<int:project_id>/services', methods=['POST'])
+@login_required
+def add_project_service(project_id):
+    data = request.json or {}
+    description = data.get('description')
+    amount = data.get('amount')
+    created_at = data.get('created_at')
+    
+    if not description or amount is None:
+        return jsonify({'error': 'Description and amount are required.'}), 400
+        
+    db = get_db()
+    cursor = db.cursor()
+    
+    if created_at:
+        cursor.execute(
+            "INSERT INTO services (project_id, description, amount, created_at) VALUES (?, ?, ?, ?)",
+            (project_id, description, amount, created_at)
+        )
+    else:
+        cursor.execute(
+            "INSERT INTO services (project_id, description, amount) VALUES (?, ?, ?)",
+            (project_id, description, amount)
+        )
+        
+    db.commit()
+    return jsonify({'success': True, 'id': cursor.lastrowid}), 201
+
+@app.route('/api/services/<int:service_id>', methods=['PUT'])
+@login_required
+def edit_service(service_id):
+    data = request.json or {}
+    description = data.get('description')
+    amount = data.get('amount')
+    created_at = data.get('created_at')
+    
+    if not description or amount is None:
+        return jsonify({'error': 'Description and amount are required.'}), 400
+        
+    db = get_db()
+    cursor = db.cursor()
+    if created_at:
+        cursor.execute(
+            "UPDATE services SET description = ?, amount = ?, created_at = ? WHERE id = ?",
+            (description, amount, created_at, service_id)
+        )
+    else:
+        cursor.execute(
+            "UPDATE services SET description = ?, amount = ? WHERE id = ?",
+            (description, amount, service_id)
+        )
+    db.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/services/<int:service_id>', methods=['DELETE'])
+@login_required
+def delete_service(service_id):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM services WHERE id = ?", (service_id,))
+    db.commit()
+    return jsonify({'success': True})
 
 if __name__ == '__main__':
     # Default local dev port 8080

@@ -84,6 +84,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const hoursFormTitle = document.getElementById('hours-form-title');
   const btnSubmitHours = document.getElementById('btn-submit-hours');
   const btnCancelHoursEdit = document.getElementById('btn-cancel-hours-edit');
+
+  const addServiceForm = document.getElementById('add-service-form');
+  const serviceIdField = document.getElementById('service-id-field');
+  const serviceFormTitle = document.getElementById('service-form-title');
+  const btnSubmitService = document.getElementById('btn-submit-service');
+  const btnCancelServiceEdit = document.getElementById('btn-cancel-service-edit');
+  const servicesListContainer = document.getElementById('services-list-container');
+  const srvDesc = document.getElementById('srv-desc');
+  const srvAmount = document.getElementById('srv-amount');
+  const srvDate = document.getElementById('srv-date');
   
   const expTypeSelect = document.getElementById('exp-type');
   const expSubtypeSelect = document.getElementById('exp-subtype');
@@ -493,13 +503,24 @@ document.addEventListener('DOMContentLoaded', () => {
       invoiceItemsContainer.innerHTML = '';
       
       // Add default item for job charge
-      addInvoiceItemRow("Painting Services", 1, project.job_charge);
+      addInvoiceItemRow("Painting Services", 1, project.initial_job_charge);
+      
+      // Fetch and add extra services as individual invoice line items
+      fetch(`/api/projects/${project.id}/services`)
+        .then(res => res.ok ? res.json() : [])
+        .then(services => {
+          services.forEach(srv => {
+            addInvoiceItemRow(srv.description, 1, srv.amount);
+          });
+        })
+        .catch(err => console.error("Error loading project services for invoice", err));
     }
     
     // Fetch associated lists
     fetchExpenses(project.id);
     fetchHours(project.id);
     fetchProjectInvoices(project.id);
+    fetchServices(project.id);
   };
 
   // Deselect project
@@ -1225,6 +1246,134 @@ document.addEventListener('DOMContentLoaded', () => {
       
       fetchGlobalInvoices();
     });
+  }
+
+  // --- Extra Services / Extras Functions ---
+  
+  const fetchServices = async (projectId) => {
+    if (!servicesListContainer) return;
+    try {
+      const response = await fetch(`/api/projects/${projectId}/services`);
+      if (!response.ok) throw new Error('Failed to fetch services.');
+      const services = await response.json();
+      renderServices(services);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const renderServices = (services) => {
+    if (!servicesListContainer) return;
+    if (services.length === 0) {
+      servicesListContainer.innerHTML = `<tr><td colspan="4" style="text-align: center; color: rgba(58,63,65,0.4); padding: 1.5rem;">No extra services registered.</td></tr>`;
+      return;
+    }
+
+    servicesListContainer.innerHTML = '';
+    services.forEach(srv => {
+      const tr = document.createElement('tr');
+      const formattedDate = srv.created_at.split(' ')[0] || srv.created_at;
+      
+      tr.innerHTML = `
+        <td style="text-align: center;">
+          <div style="display: flex; gap: 0.35rem; justify-content: center;">
+            <button type="button" class="btn-action-icon btn-edit-service" title="Edit service details" style="padding: 0.35rem; cursor: pointer;">
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+            </button>
+            <button type="button" class="btn-action-icon btn-delete-service" title="Delete service" style="padding: 0.35rem; cursor: pointer;">
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+          </div>
+        </td>
+        <td>${escapeHTML(srv.description)}</td>
+        <td style="font-weight: 600;">${formatCurrency(srv.amount)}</td>
+        <td>${formattedDate}</td>
+      `;
+
+      // Bind Edit Service
+      tr.querySelector('.btn-edit-service').addEventListener('click', () => {
+        serviceIdField.value = srv.id;
+        srvDesc.value = srv.description;
+        srvAmount.value = srv.amount.toFixed(2);
+        srvDate.value = formattedDate;
+        
+        serviceFormTitle.textContent = "Edit Extra Service";
+        btnSubmitService.textContent = "Save Changes";
+        btnCancelServiceEdit.style.display = 'block';
+      });
+
+      // Bind Delete Service
+      tr.querySelector('.btn-delete-service').addEventListener('click', async () => {
+        if (confirm(`Are you sure you want to delete this service: "${srv.description}"?`)) {
+          try {
+            const response = await fetch(`/api/services/${srv.id}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error('Failed to delete service');
+            fetchServices(state.selectedProjectId);
+            fetchProjects(); // Recalculate metrics
+          } catch (error) {
+            alert(error.message);
+          }
+        }
+      });
+
+      servicesListContainer.appendChild(tr);
+    });
+  };
+
+  const cancelServiceEdit = () => {
+    if (!serviceIdField) return;
+    serviceIdField.value = "";
+    srvDesc.value = "";
+    srvAmount.value = "";
+    srvDate.value = new Date().toISOString().split('T')[0];
+    
+    serviceFormTitle.textContent = "Add Extra Service";
+    btnSubmitService.textContent = "Add Service";
+    btnCancelServiceEdit.style.display = 'none';
+  };
+
+  // Submit new/edited service form
+  if (addServiceForm) {
+    addServiceForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!state.selectedProjectId) return;
+
+      const serviceId = serviceIdField.value;
+      const payload = {
+        description: srvDesc.value,
+        amount: parseFloat(srvAmount.value),
+        created_at: srvDate.value
+      };
+
+      const url = serviceId ? `/api/services/${serviceId}` : `/api/projects/${state.selectedProjectId}/services`;
+      const method = serviceId ? 'PUT' : 'POST';
+
+      try {
+        const response = await fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error('Failed to save service.');
+        
+        cancelServiceEdit();
+        fetchServices(state.selectedProjectId);
+        fetchProjects(); // Recalculate metrics
+      } catch (error) {
+        alert(`Error saving service: ${error.message}`);
+      }
+    });
+  }
+
+  // Cancel edit button click
+  if (btnCancelServiceEdit) {
+    btnCancelServiceEdit.addEventListener('click', cancelServiceEdit);
+  }
+
+  // Initialize service date to today
+  if (srvDate) {
+    srvDate.value = new Date().toISOString().split('T')[0];
   }
 
   // --- Initial Launch ---
