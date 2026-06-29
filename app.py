@@ -265,12 +265,27 @@ def update_project(project_id):
 def delete_project(project_id):
     db = get_db()
     cursor = db.cursor()
+    
+    # Fetch standard invoice filenames first so we can delete their PDFs from disk
+    cursor.execute("SELECT filename FROM invoices WHERE project_id = ?", (project_id,))
+    rows = cursor.fetchall()
+    
     cursor.execute("DELETE FROM projects WHERE id = ?", (project_id,))
     db.commit()
     
     if cursor.rowcount == 0:
         return jsonify({'error': 'Project not found.'}), 404
         
+    # Delete the PDFs from disk
+    for r in rows:
+        filename = r['filename']
+        try:
+            file_path = os.path.join(app.root_path, 'static', 'invoices', filename)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            app.logger.error(f"Failed to delete project invoice PDF: {e}")
+            
     return jsonify({'success': True})
 
 # --- EXPENSES API ---
@@ -525,8 +540,27 @@ def generate_project_invoice(project_id):
         dest_path = os.path.join(invoice_dir, filename)
         shutil.move(tmp_path, dest_path)
         
+        # Calculate total amount
+        subtotal = sum(item['qty'] * item['price'] for item in items)
+        total_due = subtotal + (subtotal * tax_rate)
+        
+        # Extract invoice_number from filename
+        match = re.search(r'(INV-\d{8}-\d{4})', filename)
+        invoice_number = match.group(1) if match else "INV-UNKNOWN"
+        
+        # Save to database
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            "INSERT INTO invoices (project_id, invoice_number, client_name, amount, filename) VALUES (?, ?, ?, ?, ?)",
+            (project_id, invoice_number, client_name, total_due, filename)
+        )
+        db.commit()
+        invoice_id = cursor.lastrowid
+        
         return jsonify({
             'success': True,
+            'id': invoice_id,
             'filename': filename,
             'url': f'/static/invoices/{filename}'
         }), 200
@@ -626,21 +660,93 @@ def delete_telegram_invoice(invoice_id):
         
     return jsonify({'success': True})
 
-@app.route('/api/invoices/session/<string:filename>', methods=['DELETE'])
+@app.route('/api/invoices/project/<int:invoice_id>', methods=['DELETE'])
 @login_required
-def delete_session_invoice(filename):
-    if '..' in filename or '/' in filename or '\\' in filename:
-        return jsonify({'error': 'Invalid filename'}), 400
+def delete_project_invoice(invoice_id):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT filename FROM invoices WHERE id = ?", (invoice_id,))
+    row = cursor.fetchone()
+    if not row:
+        return jsonify({'error': 'Invoice not found'}), 404
         
-    file_path = os.path.join(app.root_path, 'static', 'invoices', filename)
+    filename = row['filename']
+    cursor.execute("DELETE FROM invoices WHERE id = ?", (invoice_id,))
+    db.commit()
+    
+    # Try to delete file
     try:
+        file_path = os.path.join(app.root_path, 'static', 'invoices', filename)
         if os.path.exists(file_path):
             os.remove(file_path)
-            return jsonify({'success': True})
-        else:
-            return jsonify({'error': 'File not found'}), 404
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f"Failed to delete project invoice file: {e}")
+        
+    return jsonify({'success': True})
+
+@app.route('/api/projects/<int:project_id>/invoices', methods=['GET'])
+@login_required
+def get_project_invoices(project_id):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM invoices WHERE project_id = ? ORDER BY created_at DESC", (project_id,))
+    rows = cursor.fetchall()
+    
+    invoices = []
+    for r in rows:
+        invoices.append({
+            'id': r['id'],
+            'invoice_number': r['invoice_number'],
+            'client_name': r['client_name'],
+            'amount': r['amount'],
+            'filename': r['filename'],
+            'url': f'/static/invoices/{r["filename"]}',
+            'created_at': r['created_at']
+        })
+    return jsonify(invoices)
+
+@app.route('/api/invoices/all', methods=['GET'])
+@login_required
+def get_all_invoices():
+    db = get_db()
+    cursor = db.cursor()
+    
+    # Fetch website invoices
+    cursor.execute("SELECT i.id, i.invoice_number, i.client_name, i.amount, i.filename, i.created_at, p.name as project_name FROM invoices i JOIN projects p ON i.project_id = p.id ORDER BY i.created_at DESC")
+    rows_web = cursor.fetchall()
+    
+    # Fetch telegram invoices
+    cursor.execute("SELECT id, invoice_number, client_name, amount, filename, created_at FROM telegram_invoices ORDER BY created_at DESC")
+    rows_tele = cursor.fetchall()
+    
+    all_invoices = []
+    for r in rows_web:
+        all_invoices.append({
+            'id': r['id'],
+            'source': 'Website',
+            'project_name': r['project_name'],
+            'invoice_number': r['invoice_number'],
+            'client_name': r['client_name'],
+            'amount': r['amount'],
+            'url': f'/static/invoices/{r["filename"]}',
+            'created_at': r['created_at']
+        })
+        
+    for r in rows_tele:
+        all_invoices.append({
+            'id': r['id'],
+            'source': 'Telegram',
+            'project_name': 'Telegram Bot',
+            'invoice_number': r['invoice_number'],
+            'client_name': r['client_name'],
+            'amount': r['amount'],
+            'url': f'/static/invoices/telegram/{r["filename"]}',
+            'created_at': r['created_at']
+        })
+        
+    # Sort all by created_at DESC
+    all_invoices.sort(key=lambda x: x['created_at'], reverse=True)
+    return jsonify(all_invoices)
 
 if __name__ == '__main__':
     # Default local dev port 8080

@@ -334,8 +334,15 @@ document.addEventListener('DOMContentLoaded', () => {
       projectItem.type = 'button';
       
       projectItem.innerHTML = `
-        <div class="project-item-name">${escapeHTML(proj.name)}</div>
-        <div class="project-item-address">${escapeHTML(proj.address)}</div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+          <div class="project-item-name" style="text-align: left;">${escapeHTML(proj.name)}</div>
+          <button type="button" class="btn-delete-project-sidebar" title="Delete Project" style="background: none; border: none; padding: 0.2rem; cursor: pointer; color: rgba(58,63,65,0.4); transition: color 0.2s ease;">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="project-item-address" style="text-align: left;">${escapeHTML(proj.address)}</div>
         <div class="project-item-charge">
           <span>${formatCurrency(proj.job_charge)}</span>
           <span class="project-item-hours">${proj.total_hours} hrs</span>
@@ -348,6 +355,38 @@ document.addEventListener('DOMContentLoaded', () => {
         projectItem.classList.add('active');
         selectProject(proj);
       });
+
+      // Hook up sidebar project delete action
+      const deleteBtn = projectItem.querySelector('.btn-delete-project-sidebar');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('mouseenter', () => {
+          deleteBtn.style.color = 'var(--admin-error)';
+        });
+        deleteBtn.addEventListener('mouseleave', () => {
+          deleteBtn.style.color = 'rgba(58,63,65,0.4)';
+        });
+        deleteBtn.addEventListener('click', async (e) => {
+          e.stopPropagation(); // Avoid activating the project card
+          
+          if (!confirm(`Are you absolutely sure you want to delete the project "${proj.name}"? This will permanently delete all logged hours, expenses, and invoices.`)) {
+            return;
+          }
+          
+          try {
+            const response = await fetch(`/api/projects/${proj.id}`, {
+              method: 'DELETE'
+            });
+            if (!response.ok) throw new Error('Failed to delete project');
+            
+            if (state.selectedProjectId === proj.id) {
+              deselectProject();
+            }
+            fetchProjects();
+          } catch (error) {
+            alert(`Error deleting project: ${error.message}`);
+          }
+        });
+      }
 
       projectListContainer.appendChild(projectItem);
     });
