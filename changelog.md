@@ -31,6 +31,12 @@ This log summarizes the features, design changes, and assets completed for **Ter
 - **UI List Panel**: Added a section under the Invoices tab in the admin panel to fetch and display the history of invoices generated via Telegram.
 - **Bot-Side Integration**: Modified `TeleGravity/bot.py` to calculate total amounts, extract invoice numbers, and send the generated PDFs directly to the website API before local deletion.
 
+### 5. TeleGravity Bot Server Deployment
+- **Local Git Repository**: Cloned the `TeleGravity` bot repository directly into the website's server directory (ignored in main website git repository to prevent nested conflicts).
+- **Python 3.11 Setup**: Configured a Python 3.11 environment to run the bot, avoiding compatibility limitations of the server's default Python 3.6.
+- **Production Credentials**: Created and filled the `.env` configuration file with the bot's credentials, database settings, and secure token for the website API integration.
+- **Background Daemon Process**: Created the `start_bot.sh` script to stop any running bot instances and run the bot persistently in the background using `nohup`.
+
 ---
 
 ## 🚀 Completed Milestones - June 27, 2026
