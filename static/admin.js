@@ -49,6 +49,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabContents = document.querySelectorAll('.tab-content');
   const expensesListContainer = document.getElementById('expenses-list-container');
   const hoursListContainer = document.getElementById('hours-list-container');
+  const invoiceItemsContainer = document.getElementById('invoice-items-container');
+  const invoiceDownloadList = document.getElementById('invoice-download-list');
+  const generatedInvoicesStatus = document.getElementById('generated-invoices-status');
+  
+  // Invoice form fields
+  const generateInvoiceForm = document.getElementById('generate-invoice-form');
+  const invClientName = document.getElementById('inv-client-name');
+  const invClientAddress = document.getElementById('inv-client-address');
+  const invTaxRate = document.getElementById('inv-tax-rate');
+  const invDueDate = document.getElementById('inv-due-date');
+  const btnAddInvoiceItem = document.getElementById('btn-add-invoice-item');
   
   // Forms
   const addExpenseForm = document.getElementById('add-expense-form');
@@ -272,6 +283,37 @@ document.addEventListener('DOMContentLoaded', () => {
     globalLabor.textContent = formatCurrency(totalLaborVal);
   };
 
+  // Add invoice item row helper
+  const addInvoiceItemRow = (desc = '', qty = 1, price = 0) => {
+    if (!invoiceItemsContainer) return;
+    const row = document.createElement('div');
+    row.className = 'invoice-item-row';
+    row.innerHTML = `
+      <div class="form-group col-desc">
+        <input type="text" class="form-control item-desc" required placeholder="e.g. Painting Services" value="${escapeHTML(desc)}">
+      </div>
+      <div class="form-group col-qty">
+        <input type="number" class="form-control item-qty" required min="1" step="1" value="${qty}">
+      </div>
+      <div class="form-group col-price">
+        <input type="number" class="form-control item-price" required min="0" step="0.01" value="${price}">
+      </div>
+      <div class="col-delete">
+        <button type="button" class="btn-icon-delete btn-remove-item" title="Remove Item" style="padding: 0.35rem; cursor: pointer;">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+          </svg>
+        </button>
+      </div>
+    `;
+    
+    row.querySelector('.btn-remove-item').addEventListener('click', () => {
+      row.remove();
+    });
+    
+    invoiceItemsContainer.appendChild(row);
+  };
+
   // Select project to display in main panel
   const selectProject = (project) => {
     state.selectedProjectId = project.id;
@@ -294,6 +336,20 @@ document.addEventListener('DOMContentLoaded', () => {
     cardExpenses.textContent = formatCurrency(project.total_expenses || 0);
     cardMaterials.textContent = formatCurrency(project.total_materials || 0);
     cardLabor.textContent = formatCurrency(project.total_labor || 0);
+    
+    // Pre-populate invoice form
+    if (invClientName && invClientAddress && invTaxRate && invDueDate && invoiceItemsContainer) {
+      invClientName.value = project.name;
+      invClientAddress.value = project.address;
+      invTaxRate.value = Math.round(project.tax_rate);
+      invDueDate.value = "Upon Receipt";
+      
+      // Clear items container
+      invoiceItemsContainer.innerHTML = '';
+      
+      // Add default item for job charge
+      addInvoiceItemRow("Painting Services", 1, project.job_charge);
+    }
     
     // Fetch associated lists
     fetchExpenses(project.id);
@@ -699,6 +755,93 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById(tabId).classList.add('active');
     });
   });
+
+  // Add invoice item row button
+  if (btnAddInvoiceItem) {
+    btnAddInvoiceItem.addEventListener('click', () => {
+      addInvoiceItemRow('', 1, 0);
+    });
+  }
+
+  // Generate Invoice Form submit handler
+  if (generateInvoiceForm) {
+    generateInvoiceForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!state.selectedProjectId) {
+        alert('Please select a project first.');
+        return;
+      }
+      
+      // Collect items
+      const items = [];
+      const itemRows = invoiceItemsContainer.querySelectorAll('.invoice-item-row');
+      itemRows.forEach(row => {
+        const desc = row.querySelector('.item-desc').value;
+        const qty = parseInt(row.querySelector('.item-qty').value) || 1;
+        const price = parseFloat(row.querySelector('.item-price').value) || 0;
+        items.push({ desc, qty, price });
+      });
+      
+      if (items.length === 0) {
+        alert('At least one line item is required.');
+        return;
+      }
+      
+      const payload = {
+        client_name: invClientName.value,
+        client_address: invClientAddress.value,
+        tax_rate: parseFloat(invTaxRate.value) || 0,
+        due_date: invDueDate.value,
+        items: items
+      };
+      
+      try {
+        const submitBtn = document.getElementById('btn-generate-pdf');
+        if (submitBtn) submitBtn.disabled = true;
+        
+        const response = await fetch(`/api/projects/${state.selectedProjectId}/generate_invoice`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        if (submitBtn) submitBtn.disabled = false;
+        
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to generate invoice.');
+        }
+        
+        // Hide empty status
+        if (generatedInvoicesStatus) {
+          generatedInvoicesStatus.style.display = 'none';
+        }
+        
+        // Append item to the download list
+        const li = document.createElement('li');
+        const now = new Date().toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
+        li.innerHTML = `
+          <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+            <a href="${result.url}" target="_blank" download style="display: flex; align-items: center; text-decoration: none; color: var(--admin-accent);">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 0.3rem;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              <strong>${escapeHTML(result.filename)}</strong>
+            </a>
+            <div class="inv-date">Generated at ${now}</div>
+          </div>
+        `;
+        invoiceDownloadList.appendChild(li);
+        
+      } catch (error) {
+        console.error(error);
+        alert(error.message || 'An error occurred while generating the invoice.');
+      }
+    });
+  }
 
   // --- General Utilities ---
   

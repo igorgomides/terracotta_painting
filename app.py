@@ -475,6 +475,55 @@ def update_hours(hours_id):
         
     return jsonify({'success': True})
 
+# --- INVOICE GENERATOR API ---
+import shutil
+
+@app.route('/api/projects/<int:project_id>/generate_invoice', methods=['POST'])
+@login_required
+def generate_project_invoice(project_id):
+    from generate_invoice import create_invoice
+    data = request.json or {}
+    client_name = data.get('client_name')
+    client_address = data.get('client_address')
+    items = data.get('items', [])
+    due_date = data.get('due_date', 'Upon Receipt')
+    
+    try:
+        tax_rate = float(data.get('tax_rate', 13.0)) / 100.0
+    except (ValueError, TypeError):
+        tax_rate = 0.13
+
+    if not client_name or not client_address or not items:
+        return jsonify({'error': 'Client name, address, and at least one item are required.'}), 400
+
+    try:
+        # Generate the PDF
+        tmp_path = create_invoice(
+            client_name=client_name,
+            client_address=client_address,
+            items=items,
+            tax_rate=tax_rate,
+            due_date=due_date
+        )
+        
+        # Ensure target folder exists
+        invoice_dir = os.path.join(app.root_path, 'static', 'invoices')
+        if not os.path.exists(invoice_dir):
+            os.makedirs(invoice_dir)
+            
+        # Move PDF from /tmp to static/invoices
+        filename = os.path.basename(tmp_path)
+        dest_path = os.path.join(invoice_dir, filename)
+        shutil.move(tmp_path, dest_path)
+        
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'url': f'/static/invoices/{filename}'
+        }), 200
+    except Exception as e:
+        return jsonify({'error': f'Failed to generate invoice: {str(e)}'}), 500
+
 if __name__ == '__main__':
     # Default local dev port 8080
     app.run(host='0.0.0.0', port=8080, debug=True)

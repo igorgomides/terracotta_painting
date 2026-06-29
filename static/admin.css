@@ -702,3 +702,88 @@ body.admin-body {
   gap: 1rem;
   margin-top: 2rem;
 }
+
+/* Invoice Line Items styling */
+.invoice-items-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  margin-bottom: 0.8rem;
+  border-bottom: 1px solid rgba(58, 63, 65, 0.08);
+  padding-bottom: 0.5rem;
+}
+
+.invoice-items-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--admin-dark);
+}
+
+.invoice-item-row {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.invoice-item-row .form-group {
+  margin-bottom: 0;
+}
+
+.invoice-item-row .col-desc {
+  flex: 2;
+}
+
+.invoice-item-row .col-qty {
+  flex: 0.5;
+  min-width: 60px;
+}
+
+.invoice-item-row .col-price {
+  flex: 0.8;
+  min-width: 90px;
+}
+
+.invoice-item-row .col-delete {
+  flex: 0.2;
+  text-align: center;
+}
+
+.btn-small {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  border-radius: 8px 2px 8px 2px;
+}
+
+.invoice-download-list li {
+  background-color: #FAFAFA;
+  border: 1px solid rgba(58, 63, 65, 0.05);
+  border-radius: 12px 3px 12px 3px;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.invoice-download-list a {
+  color: var(--admin-accent);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.invoice-download-list a:hover {
+  text-decoration: underline;
+}
+
+.invoice-download-list .inv-date {
+  font-size: 0.75rem;
+  color: rgba(58, 63, 65, 0.5);
+}

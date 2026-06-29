@@ -19,6 +19,12 @@ This log summarizes the features, design changes, and assets completed for **Ter
 - **Refund Attribution**: Updated `app.py` to calculate net expenses by subtracting refund/return entries (`Devolução`) from their corresponding categories (Material vs Subcontractor/Labor) depending on the subtype.
 - **Frontend Binding**: Updated `templates/admin.html` and `static/admin.js` to query, calculate, and populate these stats dynamically.
 
+### 3. Integrated Invoice Generator (Escala Solutions)
+- **Shared Invoice Generator**: Integrated the FPDF invoice generator (`generate_invoice.py`) from the Telegram bot repository directly into the Flask application.
+- **Invoices Admin Tab**: Created an "Invoices" tab in the admin panel where users can review and generate invoices for selected projects.
+- **Dynamic Line Items & Pre-population**: Pre-populates client name, client address, HST rate, and a default item for the project's Job Charge. Allows adding, editing, or deleting line items dynamically on the UI.
+- **Downloadable PDFs**: Generates and moves PDFs to `/static/invoices/`, listing them for easy download or print directly in the browser.
+
 ---
 
 ## 🚀 Completed Milestones - June 27, 2026
