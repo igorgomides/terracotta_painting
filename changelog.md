@@ -46,6 +46,12 @@ This log summarizes the features, design changes, and assets completed for **Ter
 - **PDF Layout & Header Updates**: Updated the PDF header to print the full Escala Solutions business details (Business Number, Sedgewood Address, Email, and Phone). Added support for custom service description notes printed above payment terms.
 - **Filename Customization & Auto-Detection**: Filenames are now capitalized (`Invoice_...`) and append the sanitized property/client address. The prefix dynamically switches between `Invoice_Maintenance_...` and `Invoice_Painting_Service_...` by scanning line items for keywords (like "maintenance" or "manutenção").
 
+### 7. Extra Services & Project Variations
+- **Database Table**: Created a `services` table to log extra/additional services (change orders) requested by clients during project execution.
+- **Services & Extras Tab**: Implemented a new dashboard tab "Services & Extras" containing a data table showing logged service descriptions, dates, amounts, and actions (edit/delete).
+- **Financial Aggregation**: Dynamically sums all extra services and combines them with the project's initial job charge to recalculate financial cards (Total Job Charge, Net Profit, Balance Due, Avg Hourly Rate) in real-time.
+- **Invoice Prepopulation Integration**: The invoice generator dynamically reads all logged extra services for the active project and automatically appends them as separate, individual line items alongside the main contract item.
+
 ---
 
 ## 🚀 Completed Milestones - June 27, 2026
