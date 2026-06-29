@@ -30,6 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const cardFinalCost = document.getElementById('card-final-cost');
   const cardNetProfit = document.getElementById('card-net-profit');
   const cardHourlyRate = document.getElementById('card-hourly-rate');
+  const cardExpenses = document.getElementById('card-expenses');
+  const cardMaterials = document.getElementById('card-materials');
+  const cardLabor = document.getElementById('card-labor');
   
   // Global stats elements
   const globalInvoiced = document.getElementById('global-invoiced');
@@ -37,6 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const globalProfit = document.getElementById('global-profit');
   const globalHourly = document.getElementById('global-hourly');
   const globalHours = document.getElementById('global-hours');
+  const globalExpenses = document.getElementById('global-expenses');
+  const globalMaterials = document.getElementById('global-materials');
+  const globalLabor = document.getElementById('global-labor');
   
   // Tab elements
   const tabButtons = document.querySelectorAll('.tab-btn');
@@ -240,12 +246,18 @@ document.addEventListener('DOMContentLoaded', () => {
     let totalBalance = 0;
     let totalProfit = 0;
     let totalHours = 0;
+    let totalExpensesVal = 0;
+    let totalMaterialsVal = 0;
+    let totalLaborVal = 0;
 
     state.projects.forEach(p => {
       totalInvoiced += p.invoice_total;
       totalBalance += p.balance_due;
       totalProfit += p.net_profit;
       totalHours += p.total_hours;
+      totalExpensesVal += p.total_expenses || 0;
+      totalMaterialsVal += p.total_materials || 0;
+      totalLaborVal += p.total_labor || 0;
     });
 
     const averageHourly = totalHours > 0 ? (totalProfit / totalHours) : 0;
@@ -255,6 +267,9 @@ document.addEventListener('DOMContentLoaded', () => {
     globalProfit.textContent = formatCurrency(totalProfit);
     globalHourly.textContent = `${formatCurrency(averageHourly)}/hr`;
     globalHours.textContent = `${totalHours.toFixed(1)}h`;
+    globalExpenses.textContent = formatCurrency(totalExpensesVal);
+    globalMaterials.textContent = formatCurrency(totalMaterialsVal);
+    globalLabor.textContent = formatCurrency(totalLaborVal);
   };
 
   // Select project to display in main panel
@@ -276,6 +291,9 @@ document.addEventListener('DOMContentLoaded', () => {
     cardFinalCost.textContent = formatCurrency(project.estimated_final_cost);
     cardNetProfit.textContent = formatCurrency(project.net_profit);
     cardHourlyRate.textContent = `${formatCurrency(project.avg_hourly_earning)}/hr`;
+    cardExpenses.textContent = formatCurrency(project.total_expenses || 0);
+    cardMaterials.textContent = formatCurrency(project.total_materials || 0);
+    cardLabor.textContent = formatCurrency(project.total_labor || 0);
     
     // Fetch associated lists
     fetchExpenses(project.id);

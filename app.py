@@ -125,16 +125,33 @@ def get_projects():
         total_hours = cursor.fetchone()[0] or 0.0
         
         # Get all expenses for this project
-        cursor.execute("SELECT amount, type FROM expenses WHERE project_id = ?", (project_id,))
+        cursor.execute("SELECT amount, type, subtype FROM expenses WHERE project_id = ?", (project_id,))
         expenses_rows = cursor.fetchall()
         
         # Calculate materials and subcontractor expenses (taking Devolução as negative)
-        materials_and_subcontracted = 0.0
+        total_expenses = 0.0
+        total_materials = 0.0
+        total_labor = 0.0
         for exp in expenses_rows:
-            if exp['type'] in ('Material', 'Subcontratado'):
-                materials_and_subcontracted += exp['amount']
-            elif exp['type'] == 'Devolução':
-                materials_and_subcontracted -= exp['amount']
+            amount = exp['amount']
+            exp_type = exp['type']
+            subtype = (exp['subtype'] or '').lower()
+            
+            if exp_type == 'Material':
+                total_materials += amount
+                total_expenses += amount
+            elif exp_type == 'Subcontratado':
+                total_labor += amount
+                total_expenses += amount
+            elif exp_type == 'Devolução':
+                total_expenses -= amount
+                # Attribute the return based on the subtype/category
+                if 'subcontractor' in subtype or 'subcontratado' in subtype or 'helper' in subtype or 'painter' in subtype:
+                    total_labor -= amount
+                else:
+                    total_materials -= amount
+                
+        materials_and_subcontracted = total_expenses
                 
         # Financial Calculations (per requirements)
         job_charge = proj['job_charge']
@@ -175,7 +192,10 @@ def get_projects():
             'estimated_final_cost': round(estimated_final_cost, 2),
             'net_profit': round(net_profit, 2),
             'total_hours': round(total_hours, 2),
-            'avg_hourly_earning': round(avg_hourly_earning, 2)
+            'avg_hourly_earning': round(avg_hourly_earning, 2),
+            'total_expenses': round(total_expenses, 2),
+            'total_materials': round(total_materials, 2),
+            'total_labor': round(total_labor, 2)
         })
         
     return jsonify(projects_list)

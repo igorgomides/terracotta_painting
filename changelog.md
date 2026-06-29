@@ -1,10 +1,27 @@
 # Changelog - Terracotta Painting Website Development
 
-This log summarizes the features, design changes, and assets completed for **Terracotta Painting** on **June 27, 2026**. Use this as a reference to resume the work in the next session.
+This log summarizes the features, design changes, and assets completed for **Terracotta Painting**.
 
 ---
 
-## 🚀 Completed Milestones
+## 🚀 Completed Milestones - June 28, 2026
+
+### 1. Git Repository Setup
+- Configured Git to track the remote repository `git@github.com:igorgomides/terracotta_painting.git` (via HTTPS authenticated with Personal Access Token).
+- Pushed the codebase to the remote repository.
+
+### 2. Admin Dashboard Expense Breakdown
+- **New Small Cards**: Added small cards showing separate cost breakdowns:
+  - **Total Expenses** (Despesas Totais)
+  - **Material Cost** (Gastos com Material)
+  - **Labor / Subcontractor Cost** (Mão de Obra)
+- **Global & Project Views**: Added these cards to the global summary stats (top of the page) and the project-specific dashboard (active project view).
+- **Refund Attribution**: Updated `app.py` to calculate net expenses by subtracting refund/return entries (`Devolução`) from their corresponding categories (Material vs Subcontractor/Labor) depending on the subtype.
+- **Frontend Binding**: Updated `templates/admin.html` and `static/admin.js` to query, calculate, and populate these stats dynamically.
+
+---
+
+## 🚀 Completed Milestones - June 27, 2026
 
 ### 1. Codebase Structure & Runtimes
 - **Files Created**:
