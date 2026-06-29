@@ -25,6 +25,12 @@ This log summarizes the features, design changes, and assets completed for **Ter
 - **Dynamic Line Items & Pre-population**: Pre-populates client name, client address, HST rate, and a default item for the project's Job Charge. Allows adding, editing, or deleting line items dynamically on the UI.
 - **Downloadable PDFs**: Generates and moves PDFs to `/static/invoices/`, listing them for easy download or print directly in the browser.
 
+### 4. TeleGravity Bot Sync / Upload Integration
+- **Database Tracking**: Created a `telegram_invoices` table to store records (invoice number, client, amount, filename) of invoices created via Telegram.
+- **Secure Upload API**: Implemented a POST API endpoint `/api/invoices/telegram_upload` in `app.py` secured with Bearer token authentication, enabling the Telegram bot to upload generated PDFs.
+- **UI List Panel**: Added a section under the Invoices tab in the admin panel to fetch and display the history of invoices generated via Telegram.
+- **Bot-Side Integration**: Modified `TeleGravity/bot.py` to calculate total amounts, extract invoice numbers, and send the generated PDFs directly to the website API before local deletion.
+
 ---
 
 ## 🚀 Completed Milestones - June 27, 2026
